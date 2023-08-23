@@ -11,32 +11,46 @@ function getData(url) {
   return JSON.parse(ajax.response);
 }
 
-const newsFeed = getData(URL);
-const ul = document.createElement('ul');
+function newsFeed() {
+  const newsFeed = getData(URL);
+  const newsList = [];
 
-window.addEventListener('hashchange', () => {
-  const id = window.location.hash.substring(1);
-  const newsContent = getData(CONTENT_URL.replace('@id', id));
-  const title = document.createElement('h1');
+  newsList.push('<ul>');
+  for (let i = 0; i < newsFeed.length; i++) {
+    newsList.push(/* html */ `
+        <li>
+          <a href="#${newsFeed[i].id}"
+            >${newsFeed[i].title} (${newsFeed[i].comments_count})</a
+          >
+        </li>
+      `);
+  }
+  newsList.push('</ul>');
 
-  title.innerHTML = newsContent.title;
-
-  div.append(title);
-});
-
-for (let i = 0; i < newsFeed.length; i++) {
-  const div = document.createElement('div');
-
-  div.innerHTML = /* html */ `
-    <li>
-      <a href="#${newsFeed[i].id}"
-        >${newsFeed[i].title} (${newsFeed[i].comments_count})</a
-      >
-    </li>
-  `;
-
-  ul.appendChild(div.firstElementChild);
+  root.innerHTML = newsList.join('');
 }
 
-root.appendChild(ul);
-root.appendChild(div);
+function newsDetail() {
+  const id = window.location.hash.substring(1);
+  const newsContent = getData(CONTENT_URL.replace('@id', id));
+
+  root.innerHTML = /* html */ `
+          <h1>${newsContent.title}</h1>
+          <div>
+              <a href="#">목록으로</a>
+          </div>
+          `;
+}
+
+function router() {
+  const routePath = window.location.hash;
+
+  if (routePath === '') {
+    newsFeed();
+  } else {
+    newsDetail();
+  }
+}
+
+window.addEventListener('hashchange', router);
+router();
