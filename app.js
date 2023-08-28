@@ -5,6 +5,7 @@ const root = document.querySelector('#root');
 const div = document.createElement('div');
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 
 function getData(url) {
@@ -14,8 +15,16 @@ function getData(url) {
   return JSON.parse(ajax.response);
 }
 
+function makeFeeds(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+
+  return feeds;
+}
+
 function newsFeed() {
-  const newsFeed = getData(URL);
+  let newsFeed = store.feeds;
   const newsList = [];
 
   let template = /* html */ `
@@ -24,7 +33,7 @@ function newsFeed() {
         <div class="mx-auto px-4">
           <div class="flex justify-between items-center py-6">
             <div class="flex justify-start">
-              <h1 class="font-extrabold">Hacker News</h1>
+              <h1 class="font-extrabold"><a href='#'>Hacker News</a></h1>
             </div>
             <div class="pagination items-center justify-end">
               <a class=" prev text-gray-500">
@@ -40,6 +49,11 @@ function newsFeed() {
       </div>
     </div>
   `;
+
+  if (newsFeed.length === 0) {
+    newsFeed = store.feeds = makeFeeds(getData(URL));
+    console.log(newsFeed);
+  }
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
     newsList.push(`
@@ -91,14 +105,13 @@ function newsFeed() {
 function newsDetail() {
   const id = window.location.hash.split('/')[2];
   const newsContent = getData(CONTENT_URL.replace('@id', id));
-  console.log(newsContent);
   let template = /* html */ `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
         <div class="mx-auto px-4">
           <div class="flex justify-between items-center py-6">
             <div class="flex justify-start">
-              <h1 class="font-extrabold">Hacker News</h1>
+              <h1 class="font-extrabold"><a href='#'>Hacker News</a></h1>
             </div>
             <div class="items-center justify-end">
               <a href="#/page/${store.currentPage}" class="text-gray-500">
@@ -120,6 +133,14 @@ function newsDetail() {
       </div>
     </div>
     `;
+
+  const readNews = store.feeds.find((item) => {
+    return item.id === Number(id);
+  });
+
+  if (readNews) {
+    readNews.read = true;
+  }
 
   function makeCommet(comments, called = 0) {
     const commentString = [];
