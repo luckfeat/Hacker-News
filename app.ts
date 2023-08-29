@@ -1,21 +1,50 @@
-const ajax = new XMLHttpRequest();
-const URL = 'https://api.hnpwa.com/v0/news/1.json';
+type Store = {
+  currentPage: number;
+  feeds: NewsFeed[];
+};
+
+type News = {
+  id: number;
+  time_ago: string;
+  title: string;
+  url: string;
+  user: string;
+  content: string;
+};
+
+type NewsFeed = News & {
+  comments_count: number;
+  points: number;
+  read?: boolean;
+};
+
+type NewsDetail = News & {
+  comments: NewsComment[];
+};
+
+type NewsComment = News & {
+  comments: NewsComment[];
+  level: number;
+};
+
+const ajax: XMLHttpRequest = new XMLHttpRequest();
+const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
-const root = document.querySelector('#root');
+const root: HTMLElement | null = document.querySelector('#root');
 const div = document.createElement('div');
-const store = {
+const store: Store = {
   currentPage: 1,
   feeds: [],
 };
 
-function getData(url) {
+function getData<AjaxResponse>(url: string): AjaxResponse {
   ajax.open('GET', url, false);
   ajax.send();
 
   return JSON.parse(ajax.response);
 }
 
-function makeFeeds(feeds) {
+function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
@@ -23,8 +52,8 @@ function makeFeeds(feeds) {
   return feeds;
 }
 
-function newsFeed() {
-  let newsFeed = store.feeds;
+function newsFeed(): void {
+  let newsFeed: NewsFeed[] = store.feeds;
   const newsList = [];
 
   let template = /* html */ `
@@ -51,8 +80,7 @@ function newsFeed() {
   `;
 
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData(URL));
-    console.log(newsFeed);
+    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
   }
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
@@ -83,28 +111,55 @@ function newsFeed() {
 
   template = template.replace('{{__news_feed__}}', newsList.join(''));
 
-  root.innerHTML = template;
+  root
+    ? (root.innerHTML = template)
+    : console.error('최상위 컨테이너가 없습니다.');
 
-  const pagination = document.querySelector('.pagination');
+  const pagination: HTMLElement | null = document.querySelector('.pagination');
   const prevAnchor = document.querySelector('.prev');
   const nextAnchor = document.querySelector('.next');
 
   if (store.currentPage > 1) {
     const prev = document.createElement('a');
     prev.innerHTML = `<a href="#/page/${store.currentPage - 1}">Prev</a>`;
-    pagination.replaceChild(prev, prevAnchor);
+    pagination
+      ? pagination.replaceChild(prev, prevAnchor)
+      : console.error('요소를 찾을 수 없습니다');
   }
 
   if (store.currentPage < newsFeed.length / 10) {
     const next = document.createElement('a');
     next.innerHTML = `<a href="#/page/${store.currentPage + 1}">Next</a>`;
-    pagination.replaceChild(next, nextAnchor);
+    pagination
+      ? pagination.replaceChild(next, nextAnchor)
+      : console.error('요소를 찾을 수 없습니다');
   }
 }
 
-function newsDetail() {
+function makeCommet(comments: NewsComment[]): string {
+  const commentString = [];
+
+  for (let i = 0; i < comments.length; i++) {
+    commentString.push(/* html */ `
+      <div style="padding-left: ${comments[i].level * 40}px;" class="mt-4">
+        <div class="text-gray-400">
+          <i class="fa fa-sort-up mr-2"></i>
+          <strong>${comments[i].user}</strong> ${comments[i].time_ago}
+        </div>
+        <p class="text-gray-700">${comments[i].content}</p>
+      </div>      
+    `);
+    if (comments[i].comments.length > 0) {
+      commentString.push(makeCommet(comments[i].comments));
+    }
+  }
+
+  return commentString.join('');
+}
+
+function newsDetail(): void {
   const id = window.location.hash.split('/')[2];
-  const newsContent = getData(CONTENT_URL.replace('@id', id));
+  const newsContent = getData<NewsDetail>(CONTENT_URL.replace('@id', id));
   let template = /* html */ `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
@@ -142,34 +197,15 @@ function newsDetail() {
     readNews.read = true;
   }
 
-  function makeCommet(comments, called = 0) {
-    const commentString = [];
-
-    for (let i = 0; i < comments.length; i++) {
-      commentString.push(/* html */ `
-        <div style="padding-left: ${called * 40}px;" class="mt-4">
-          <div class="text-gray-400">
-            <i class="fa fa-sort-up mr-2"></i>
-            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-          </div>
-          <p class="text-gray-700">${comments[i].content}</p>
-        </div>      
-      `);
-      if (comments[i].comments.length > 0) {
-        commentString.push(makeCommet(comments[i].comments, called + 1));
-      }
-    }
-
-    return commentString.join('');
-  }
-
-  root.innerHTML = template.replace(
-    '{{__comments__}',
-    makeCommet(newsContent.comments)
-  );
+  root
+    ? (root.innerHTML = template.replace(
+        '{{__comments__}',
+        makeCommet(newsContent.comments)
+      ))
+    : console.error('최상위 컨테이너가 없습니다.');
 }
 
-function router() {
+function router(): void {
   const routePath = window.location.hash;
 
   if (routePath === '') {
