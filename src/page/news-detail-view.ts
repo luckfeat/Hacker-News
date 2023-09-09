@@ -1,6 +1,6 @@
 import View from '../core/view';
 import { NewsDetailApi } from '../core/api';
-import { NewsDetail, NewsComment } from '../types';
+import { NewsDetail, NewsComment } from '../types/index';
 import { CONTENT_URL } from '../config';
 
 const template = /* html */ `
