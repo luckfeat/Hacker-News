@@ -1,6 +1,20 @@
+import View from '../core/view';
+
 export type Store = {
   currentPage: number;
   feeds: NewsFeed[];
+};
+
+export type NewsStore = {
+  getAllFeeds: () => NewsFeed[];
+  getFeed: (position: number) => NewsFeed;
+  setFeeds: (feeds: NewsFeed[]) => void;
+  makeRead: (id: number) => void;
+  hasFeeds: boolean;
+  currentPage: number;
+  numberOfFeed: number;
+  nextPage: number;
+  prevPage: number;
 };
 
 export type News = {

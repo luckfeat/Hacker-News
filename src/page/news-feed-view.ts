@@ -1,6 +1,6 @@
 import View from '../core/view';
 import { NewsFeedApi } from '../core/api';
-import { NewsFeed } from '../types';
+import { NewsFeed, NewsStore } from '../types';
 import { NEWS_URL } from '../config';
 
 const template: string = /* html */ `
@@ -28,27 +28,25 @@ const template: string = /* html */ `
 
 export default class NewsFeedView extends View {
   private api: NewsFeedApi;
-  private feeds: NewsFeed[];
-  constructor(containerId: string) {
+  private store: NewsStore;
+  constructor(containerId: string, store: NewsStore) {
     super(containerId, template);
     this.api = new NewsFeedApi();
-    this.feeds = store.feeds;
-    if (this.feeds.length === 0) {
-      this.feeds = this.api.getData();
-      this.checkReadNews();
-      store.feeds = this.feeds;
+    this.store = store;
+    if (!this.store.hasFeeds) {
+      this.store.setFeeds(this.api.getData());
     }
   }
 
   render() {
-    store.currentPage = Number(location.hash.substring(7) || 1);
+    this.store.currentPage = Number(location.hash.substring(7) || 1);
     for (
-      let i = (store.currentPage - 1) * 10;
-      i < store.currentPage * 10;
+      let i = (this.store.currentPage - 1) * 10;
+      i < this.store.currentPage * 10;
       i++
     ) {
       const { read, id, title, comments_count, user, points, time_ago } =
-        this.feeds[i];
+        this.store.getFeed(i);
       this.addHTML(`
       <div class="p-6 ${
         read ? 'bg-red-500' : 'bg-white'
@@ -79,9 +77,11 @@ export default class NewsFeedView extends View {
     const prevAnchor = document.querySelector('.prev');
     const nextAnchor = document.querySelector('.next');
 
-    if (store.currentPage > 1) {
+    if (this.store.currentPage > 1) {
       const prev = document.createElement('a');
-      prev.innerHTML = `<a href="#/page/${store.currentPage - 1}">Prev</a>`;
+      prev.innerHTML = `<a href="#/page/${
+        this.store.currentPage - 1
+      }">Prev</a>`;
       if (prevAnchor) {
         pagination
           ? pagination.replaceChild(prev, prevAnchor)
@@ -91,9 +91,11 @@ export default class NewsFeedView extends View {
       }
     }
 
-    if (store.currentPage < this.feeds.length / 10) {
+    if (this.store.currentPage < this.store.numberOfFeed / 10) {
       const next = document.createElement('a');
-      next.innerHTML = `<a href="#/page/${store.currentPage + 1}">Next</a>`;
+      next.innerHTML = `<a href="#/page/${
+        this.store.currentPage + 1
+      }">Next</a>`;
       if (nextAnchor) {
         pagination
           ? pagination.replaceChild(next, nextAnchor)
@@ -101,12 +103,6 @@ export default class NewsFeedView extends View {
       } else {
         console.error('다음 페이지 요소를 찾을 수 없습니다.');
       }
-    }
-  }
-
-  private checkReadNews(): void {
-    for (let i = 0; i < this.feeds.length; i++) {
-      this.feeds[i].read = false;
     }
   }
 }

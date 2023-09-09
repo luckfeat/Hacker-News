@@ -1,4 +1,5 @@
 import { NewsFeed, NewsDetail } from '../types';
+import { NEWS_URL, CONTENT_URL } from '../config';
 
 function applyApiMixinx(targetClass: any, baseClasses: any[]): void {
   baseClasses.forEach((baseClass) => {
