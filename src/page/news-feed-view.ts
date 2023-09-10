@@ -31,22 +31,31 @@ export default class NewsFeedView extends View {
   private store: NewsStore;
   constructor(containerId: string, store: NewsStore) {
     super(containerId, template);
-    this.api = new NewsFeedApi();
+
     this.store = store;
-    if (!this.store.hasFeeds) {
-      this.store.setFeeds(this.api.getData());
-    }
+    this.api = new NewsFeedApi(NEWS_URL);
   }
 
   render() {
     this.store.currentPage = Number(location.hash.substring(7) || 1);
+    if (!this.store.hasFeeds) {
+      this.api.getData((feeds: NewsFeed[]) => {
+        this.store.setFeeds(feeds);
+        this.renderView();
+      });
+    }
+    this.renderView();
+  }
+
+  renderView() {
     for (
       let i = (this.store.currentPage - 1) * 10;
       i < this.store.currentPage * 10;
       i++
     ) {
-      const { read, id, title, comments_count, user, points, time_ago } =
+      const { id, title, comments_count, user, points, time_ago, read } =
         this.store.getFeed(i);
+
       this.addHTML(`
       <div class="p-6 ${
         read ? 'bg-red-500' : 'bg-white'
