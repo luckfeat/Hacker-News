@@ -43,7 +43,7 @@ export default class NewsDetailView extends View {
   render() {
     const id = window.location.hash.split('/')[2];
     const api = new NewsDetailApi(CONTENT_URL.replace('@id', id));
-    api.getData((data: NewsDetail) => {
+    api.getDataWithPromise((data: NewsDetail) => {
       this.store.makeRead(Number(id));
       this.setTemplateData('comments', this.makeCommet(data.comments));
       this.setTemplateData('title', data.title);
